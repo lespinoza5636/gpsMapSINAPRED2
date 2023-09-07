@@ -1,5 +1,8 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:gps_flutter/ui/home/widgets/google_maps.dart';
 import 'package:gps_flutter/ui/home/home_controller.dart';
 import 'package:provider/provider.dart';
 
@@ -16,19 +19,18 @@ class HomePage extends StatelessWidget {
       final markers = controller.markers.firstWhere(
           (marker) => marker.markerId.value == id
       );
-      
        showDialog(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: Text('Información del Marcador'),
+        title: const Text('Información del Marcador'),
         content: Text('ID del Marcador: $id ${markers.position.latitude} ${markers.position.longitude}'), // Puedes personalizar el contenido aquí
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context).pop(); // Cerrar el cuadro de diálogo
             },
-            child: Text('Contestar instrumento',),
+            child: const Text('Contestar instrumento',),
           ),
           TextButton(
             onPressed: () {
@@ -41,10 +43,55 @@ class HomePage extends StatelessWidget {
     },
   );
       });
+
+controller.onPolygonTap.listen((String id) {
+      final poligons = controller.polygons.firstWhere(
+          (poligon) => poligon.polygonId.value == id
+      );
+       showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Información del Marcador'),
+        content: Text('ID del Marcador: $id ${poligons.points[0].latitude} ${poligons.points[0].longitude}'), // Puedes personalizar el contenido aquí
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Cerrar el cuadro de diálogo
+            },
+            child: const Text('Contestar instrumento',),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Cerrar el cuadro de diálogo
+            },
+            child: Text('Cerrar', style: TextStyle(color: Colors.red[300]) ,),
+          ),
+        ],
+      );
+    },
+  );
+      });
+      
       return controller;
     },
-    child:Scaffold(
-      
+    child: Scaffold(
+      appBar: AppBar(actions: [
+        Builder(builder: (context)=>
+        IconButton(onPressed: (){
+          final controller = context.read<HomeController>();
+          HomeController.currentMode = Mode.draw;
+          controller.newPolygon();
+
+        }, icon: const Icon(Icons.add),
+        )
+    ),
+    Builder(builder: (context)=>
+        IconButton(onPressed: (){
+          HomeController.currentMode = Mode.click;
+        }, icon: const Icon(Icons.map),
+        )
+    )]),
       body: Selector<HomeController, bool>(
         selector: (_, controller) => controller.loading,
         builder: (context, loagind, loagindWidget)
@@ -52,54 +99,7 @@ class HomePage extends StatelessWidget {
           if(loagind){
             return loagindWidget!;
           }
-         return Consumer<HomeController>(
-        builder: (_, controller, gpsMessageWidget) {
-
-          if(
-            !controller.gpsEnable){
-            return gpsMessageWidget!;
-          } 
-
-          
-
-          return SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: 
-              GoogleMap(
-                markers:  controller.markers,
-                onMapCreated: controller.onMapCreated,
-                initialCameraPosition: controller.initialCameraPosition,
-              myLocationButtonEnabled: true,
-              myLocationEnabled: true,
-              onTap: controller.onTap,
-              )
-            ),
-          ],
-        ),
-        
-      );
-        },
-        child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    "Cuando use la App habilite el GPS",
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 10,),
-                  ElevatedButton(
-                    onPressed:(){
-                      final controller = context.read<HomeController>();
-                      controller.turnOnGPS();
-                    }, 
-                    child: const Text("Encender el GPS"))
-                ],
-              ),
-            ),
-      );
+         return const MapView();
         },
       child: const Center(
               child: CircularProgressIndicator()),
@@ -110,14 +110,14 @@ class HomePage extends StatelessWidget {
            children: [
              FloatingActionButton(
                 onPressed: (){
-                  
+                  HomeController.accion = Type.polyne;
                 },
                 child: const Icon(Icons.pinch),
               ),
               const SizedBox(width: 8,),
               FloatingActionButton(
                 onPressed: (){
-                  
+                  HomeController.accion = Type.point;
                 },
                 child: const Icon(Icons.location_on),
             ),
@@ -126,3 +126,4 @@ class HomePage extends StatelessWidget {
     ));
   }
 }
+

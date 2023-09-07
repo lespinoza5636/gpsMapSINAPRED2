@@ -1,7 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' show ChangeNotifier;
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:gps_flutter/helpers/image_to_bytes.dart';
@@ -9,20 +8,36 @@ import 'package:gps_flutter/utils/maps_styles.dart';
 
 class HomeController extends ChangeNotifier{
 
+  //Mis variables
+
+  static Type accion =Type.polyne;
+
+  static Mode currentMode = Mode.draw;
+
+  void toggleMode() {
+    currentMode = (currentMode == Mode.draw) ? Mode.click : Mode.draw;
+    notifyListeners();
+  }
+
   final Map<MarkerId, Marker> _markers = {};
+  final Map<PolylineId, Polyline> _polylines = {};
+  final Map<PolygonId, Polygon> _polygons = {};
 
   Set<Marker> get markers => _markers.values.toSet();
+
+  Set<Polyline> get polylines => _polylines.values.toSet();
+
+  Set<Polygon> get polygons => _polygons.values.toSet();
+
+
   final _markersController = StreamController<String>.broadcast();
   Stream<String> get onMarkerTap => _markersController.stream;
 
-  Position? _initialPosition;
-  CameraPosition get initialCameraPosition => CameraPosition(
-    target: LatLng(_initialPosition!.latitude, 
-          _initialPosition!.longitude)
-          , zoom: 19
-            
-          );
+  final _polygonController = StreamController<String>.broadcast();
+  Stream<String> get onPolygonTap => _polygonController.stream;
 
+  Position? _initialPosition;
+  Position? get initialPosition => _initialPosition;
   final _homeIcon = Completer<BitmapDescriptor>();
 
   bool _loading = true;
@@ -33,6 +48,8 @@ class HomeController extends ChangeNotifier{
 
   StreamSubscription? _gpssubscription, _positionSubscription;
 
+  String _polylineId = '0';
+String _polygonId = '0';
   HomeController(){
     _init();
   }
@@ -48,28 +65,34 @@ class HomeController extends ChangeNotifier{
     _gpssubscription = Geolocator.getServiceStatusStream().listen((status) async {
       _gpsEnable = status == ServiceStatus.enabled;
       //await _getInitialPosition();
-      notifyListeners();
+      if(_gpsEnable==true){
+        _initLocationUpdates();
+      }
+       
     });
 
-    await _initLocationUpdates();
-    notifyListeners();
+    _initLocationUpdates();
   }
 
-  Future<void> _initLocationUpdates(){
-    final completer = Completer();
-
+  Future<void> _initLocationUpdates() async{
+    bool initialized = false;
+    await _positionSubscription?.cancel();
     _positionSubscription= Geolocator.getPositionStream().listen((position) {
-      if(!completer.isCompleted){
+      if(!initialized){
         _setInitialPosition(position);
-        completer.complete();
+        initialized = true;
+        notifyListeners();
       }
       
     },
     onError: (e){
       print("${e.runtimeType}");
+      if(e is LocationServiceDisabledException)
+      {
+        _gpsEnable = false;
+        notifyListeners();
+      }
     });
-
-    return completer.future;
   }
 
   void _setInitialPosition(Position position)
@@ -87,8 +110,17 @@ class HomeController extends ChangeNotifier{
 
   Future<void> turnOnGPS() => Geolocator.openLocationSettings();
 
+  void newPolyline(){
+    _polylineId = DateTime.now().millisecondsSinceEpoch.toString();
+  }
+  void newPolygon(){
+    _polygonId = DateTime.now().millisecondsSinceEpoch.toString();
+  }
+
   void onTap(LatLng position) async{
-    final id = _markers.length.toString();
+    
+    if (accion == Type.point){
+      final id = _markers.length.toString();
     final markerId = MarkerId(id);
 
     final icon = await _homeIcon.future;
@@ -103,6 +135,50 @@ class HomeController extends ChangeNotifier{
       }
       ); 
     _markers[markerId] = marker;
+    
+    }
+
+    if (accion == Type.polyne)
+    {
+    if (currentMode == Mode.draw) {
+    // Agregar el polígono en el modo de dibujo
+    final PolygonId polygonId = PolygonId(_polygonId);
+    late Polygon polygon;
+
+    if(_polygons.containsKey(polygonId)){
+      final tmp = _polygons[polygonId]!;
+      polygon = tmp.copyWith(
+        pointsParam: [...tmp.points, position]
+      );
+
+    }
+    else{
+      const color = Colors.red;
+      polygon = Polygon(polygonId: polygonId,
+      points: [position],
+      strokeWidth: 3,
+      fillColor: color.withOpacity(.4)
+      );
+    }
+
+      _polygons[polygonId] = polygon;
+    // ...
+  } else if (currentMode == Mode.click) {
+    // Agregar el polígono en el modo de dibujo
+
+    final id = _polygons.length.toString();
+    
+    final PolygonId polygonId = PolygonId(id);
+    Polygon polygon = Polygon(
+        polygonId: polygonId,
+        points: [position],
+        strokeWidth: 3,
+        onTap: () {
+          _polygonController.sink.add(id);
+        }
+      );
+    }
+  }
     notifyListeners();
   }
 
@@ -112,6 +188,17 @@ class HomeController extends ChangeNotifier{
     _positionSubscription?.cancel();
     _gpssubscription?.cancel();
     _markersController.close();
+    _polygonController.close();
     super.dispose();
   }
+}
+
+enum Type {
+    point,
+    polyne,
+}
+
+enum Mode {
+  draw,
+  click,
 }
