@@ -138,6 +138,8 @@ String _polygonId = '0';
     
     }
 
+
+//#############################################################################
     if (accion == Type.polyne)
     {
     if (currentMode == Mode.draw) {
@@ -157,6 +159,9 @@ String _polygonId = '0';
       polygon = Polygon(polygonId: polygonId,
       points: [position],
       strokeWidth: 3,
+      onTap: () {
+    _polygonController.sink.add(id);
+  }
       fillColor: color.withOpacity(.4)
       );
     }
@@ -179,6 +184,7 @@ String _polygonId = '0';
       );
     }
   }
+  //##################################################################################
     notifyListeners();
   }
 
