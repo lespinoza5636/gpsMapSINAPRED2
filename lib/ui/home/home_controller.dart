@@ -9,7 +9,7 @@ import 'package:gps_flutter/utils/maps_styles.dart';
 class HomeController extends ChangeNotifier{
 
   //Mis variables
-
+  static bool agregado = false;
   static Type accion =Type.polyne;
 
   static Mode currentMode = Mode.draw;
@@ -120,32 +120,42 @@ String _polygonId = '0';
   void onTap(LatLng position) async{
     
     if (accion == Type.point){
-      final id = _markers.length.toString();
-    final markerId = MarkerId(id);
+      if(!agregado)
+      {
+final id = _markers.length.toString();
+        final markerId = MarkerId(id);
 
-    final icon = await _homeIcon.future;
+        final icon = await _homeIcon.future;
 
-    final marker=Marker(
-      markerId: markerId, 
-      position: position,
-      draggable: true,
-      icon: icon,
-      onTap: (){
-        _markersController.sink.add(id);
+        final marker=Marker(
+          markerId: markerId, 
+          position: position,
+          draggable: true,
+          icon: icon,
+          onTap: (){
+            //_markersController.sink.add(id);
+          }
+          ); 
+        _markers[markerId] = marker;
+        agregado = true;
       }
-      ); 
-    _markers[markerId] = marker;
-    
     }
 
 
 //#############################################################################
     if (accion == Type.polyne)
     {
-    if (currentMode == Mode.draw) {
-    // Agregar el polígono en el modo de dibujo
-    final PolygonId polygonId = PolygonId(_polygonId);
-    late Polygon polygon;
+      
+      final id = _polygons.length.toString();
+      final PolygonId polygonId = PolygonId(id);
+      Polygon polygon = Polygon(
+        polygonId: polygonId,
+        points: [position],
+        strokeWidth: 3,
+        onTap: () {
+          _polygonController.sink.add(id);
+        }
+      );
 
     if(_polygons.containsKey(polygonId)){
       final tmp = _polygons[polygonId]!;
@@ -154,35 +164,8 @@ String _polygonId = '0';
       );
 
     }
-    else{
-      const color = Colors.red;
-      polygon = Polygon(polygonId: polygonId,
-      points: [position],
-      strokeWidth: 3,
-      onTap: () {
-    _polygonController.sink.add(id);
-  }
-      fillColor: color.withOpacity(.4)
-      );
-    }
-
       _polygons[polygonId] = polygon;
     // ...
-  } else if (currentMode == Mode.click) {
-    // Agregar el polígono en el modo de dibujo
-
-    final id = _polygons.length.toString();
-    
-    final PolygonId polygonId = PolygonId(id);
-    Polygon polygon = Polygon(
-        polygonId: polygonId,
-        points: [position],
-        strokeWidth: 3,
-        onTap: () {
-          _polygonController.sink.add(id);
-        }
-      );
-    }
   }
   //##################################################################################
     notifyListeners();
