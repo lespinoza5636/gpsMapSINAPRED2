@@ -33,7 +33,6 @@ class MapView extends StatelessWidget {
          child: 
          GoogleMap(
            markers:  controller.markers,
-           polylines: controller.polylines,
            polygons: controller.polygons,
            onMapCreated: controller.onMapCreated,
            initialCameraPosition: initialCameraPosition,

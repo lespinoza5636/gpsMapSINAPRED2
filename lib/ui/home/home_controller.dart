@@ -12,13 +12,6 @@ class HomeController extends ChangeNotifier{
   static bool agregado = false;
   static Type accion =Type.polyne;
 
-  static Mode currentMode = Mode.draw;
-
-  void toggleMode() {
-    currentMode = (currentMode == Mode.draw) ? Mode.click : Mode.draw;
-    notifyListeners();
-  }
-
   final Map<MarkerId, Marker> _markers = {};
   final Map<PolylineId, Polyline> _polylines = {};
   final Map<PolygonId, Polygon> _polygons = {};
@@ -47,9 +40,7 @@ class HomeController extends ChangeNotifier{
   bool get gpsEnable => _gpsEnable;
 
   StreamSubscription? _gpssubscription, _positionSubscription;
-
-  String _polylineId = '0';
-String _polygonId = '0';
+  String _polygonId = '0';
   HomeController(){
     _init();
   }
@@ -100,7 +91,6 @@ String _polygonId = '0';
     if(_gpsEnable && _initialPosition == null){
       //_initialPosition = await Geolocator.getLastKnownPosition();
       _initialPosition = position;
-
     }
   }
 
@@ -110,9 +100,6 @@ String _polygonId = '0';
 
   Future<void> turnOnGPS() => Geolocator.openLocationSettings();
 
-  void newPolyline(){
-    _polylineId = DateTime.now().millisecondsSinceEpoch.toString();
-  }
   void newPolygon(){
     _polygonId = DateTime.now().millisecondsSinceEpoch.toString();
   }
@@ -122,7 +109,7 @@ String _polygonId = '0';
     if (accion == Type.point){
       if(!agregado)
       {
-final id = _markers.length.toString();
+        final id = _markers.length.toString();
         final markerId = MarkerId(id);
 
         final icon = await _homeIcon.future;
@@ -145,27 +132,28 @@ final id = _markers.length.toString();
 //#############################################################################
     if (accion == Type.polyne)
     {
-      
       final id = _polygons.length.toString();
-      final PolygonId polygonId = PolygonId(id);
-      Polygon polygon = Polygon(
-        polygonId: polygonId,
-        points: [position],
-        strokeWidth: 3,
-        onTap: () {
-          _polygonController.sink.add(id);
-        }
-      );
+      final PolygonId polygonId = PolygonId(_polygonId);
+      late Polygon polygon;
 
-    if(_polygons.containsKey(polygonId)){
+      if(_polygons.containsKey(polygonId)){
       final tmp = _polygons[polygonId]!;
       polygon = tmp.copyWith(
         pointsParam: [...tmp.points, position]
       );
-
+    }
+    else{
+      polygon = Polygon(
+        polygonId: polygonId,
+        points: [position],
+        strokeWidth: 1,
+        fillColor: Colors.black.withOpacity(0.4),
+        onTap: () {
+          _polygonController.sink.add(id);
+        }
+      );
     }
       _polygons[polygonId] = polygon;
-    // ...
   }
   //##################################################################################
     notifyListeners();
@@ -185,9 +173,4 @@ final id = _markers.length.toString();
 enum Type {
     point,
     polyne,
-}
-
-enum Mode {
-  draw,
-  click,
 }

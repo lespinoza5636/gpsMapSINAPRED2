@@ -20,14 +20,11 @@ class MappsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'MapsApp',
+    return const MaterialApp(
+      title: 'Maps App',
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Material App Bar'),
-        ),
-        body: const LoadingScreen(),
+        body: LoadingScreen(),
       ),
     );
   }

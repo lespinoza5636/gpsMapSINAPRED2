@@ -80,7 +80,6 @@ controller.onPolygonTap.listen((String id) {
         Builder(builder: (context)=>
         IconButton(onPressed: (){
           final controller = context.read<HomeController>();
-          HomeController.currentMode = Mode.draw;
           controller.newPolygon();
 
         }, icon: const Icon(Icons.add),
@@ -88,7 +87,6 @@ controller.onPolygonTap.listen((String id) {
     ),
     Builder(builder: (context)=>
         IconButton(onPressed: (){
-          HomeController.currentMode = Mode.click;
         }, icon: const Icon(Icons.map),
         )
     )]),
