@@ -50,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                               context,
                                               MaterialPageRoute(builder: (context) => const HomePage()), // Reemplaza 'HomeScreen()' con la pantalla que desees mostrar
                                             );
-                  } else {
+                  } else { 
                     ScaffoldMessenger.of(context).showSnackBar( const
                       SnackBar(
                         content: Text('Usuario o contraseña incorrectos. Por favor, inténtelo de nuevo.'),
